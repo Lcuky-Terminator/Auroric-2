@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { updateUser, getUserFull } from '@/lib/db';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'auroric-super-secret-jwt-key-2024-change-in-production'
+);
 
 /**
  * POST /api/auth/verify
@@ -18,12 +20,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing verification token' }, { status: 400 });
     }
 
-    // Verify the JWT token
+    // Verify the JWT token using jose
     let payload: any;
     try {
-      payload = jwt.verify(token, JWT_SECRET);
+      const result = await jwtVerify(token, JWT_SECRET);
+      payload = result.payload;
     } catch (err: any) {
-      if (err.name === 'TokenExpiredError') {
+      if (err?.code === 'ERR_JWT_EXPIRED') {
         return NextResponse.json({ error: 'Verification link has expired. Please request a new one.' }, { status: 400 });
       }
       return NextResponse.json({ error: 'Invalid verification token.' }, { status: 400 });
@@ -57,7 +60,6 @@ export async function POST(request: Request) {
  */
 export async function GET() {
   try {
-    // Import dynamically to avoid circular issues
     const { getCurrentUser } = await import('@/lib/auth');
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ verified: false });

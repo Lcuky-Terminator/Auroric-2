@@ -7,24 +7,35 @@
 
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Auroric <onboarding@resend.dev>';
+
+// Lazy initialization to avoid build-time errors when env var is missing
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error('RESEND_API_KEY environment variable is not set');
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
 
 /**
  * Send a verification email with a clickable link.
  */
 export async function sendVerificationEmail(
-    to: string,
-    displayName: string,
-    verifyUrl: string,
+  to: string,
+  displayName: string,
+  verifyUrl: string,
 ) {
-    const { data, error } = await resend.emails.send({
-        from: FROM_EMAIL,
-        to,
-        subject: 'Verify your Auroric email',
-        html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px;">
+  const resend = getResend();
+
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: 'Verify your Auroric email',
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; background-color: #0a0a0a;">
         <div style="text-align: center; margin-bottom: 32px;">
           <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #f97316, #ea580c); border-radius: 12px; line-height: 48px; font-size: 24px; font-weight: bold; color: white;">A</div>
         </div>
@@ -42,16 +53,16 @@ export async function sendVerificationEmail(
         </p>
         <hr style="border: none; border-top: 1px solid #333; margin: 32px 0;" />
         <p style="text-align: center; color: #525252; font-size: 12px;">
-          © Auroric — Share what inspires you
+          &copy; Auroric &mdash; Share what inspires you
         </p>
       </div>
     `,
-    });
+  });
 
-    if (error) {
-        console.error('[Resend] Failed to send verification email:', error);
-        throw new Error(error.message || 'Failed to send verification email');
-    }
+  if (error) {
+    console.error('[Resend] Failed to send verification email:', error);
+    throw new Error(error.message || 'Failed to send verification email');
+  }
 
-    return data;
+  return data;
 }

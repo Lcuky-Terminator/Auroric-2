@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUser, createToken } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { getUserFull } from '@/lib/db';
 import { sendVerificationEmail } from '@/lib/resend';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = new TextEncoder().encode(
+    process.env.JWT_SECRET || 'auroric-super-secret-jwt-key-2024-change-in-production'
+);
 
 /**
  * POST /api/auth/send-verification
@@ -28,18 +30,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: 'Already verified', alreadyVerified: true });
         }
 
-        // Generate a verification token (expires in 24 hours)
-        const verificationToken = jwt.sign(
-            { userId: user.id, email: full.email, purpose: 'email-verification' },
-            JWT_SECRET,
-            { expiresIn: '24h' },
-        );
+        // Generate a verification token (expires in 24 hours) using jose
+        const verificationToken = await new SignJWT({
+            userId: user.id,
+            email: full.email,
+            purpose: 'email-verification',
+        })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('24h')
+            .sign(JWT_SECRET);
 
         // Build the verification URL
+        const forwardedHost = request.headers.get('x-forwarded-host');
         const origin = request.headers.get('origin')
-            || request.headers.get('x-forwarded-host')
-            ? `https://${request.headers.get('x-forwarded-host')}`
-            : 'http://localhost:3002';
+            || (forwardedHost ? `https://${forwardedHost}` : 'http://localhost:3002');
 
         const verifyUrl = `${origin}/verify?token=${verificationToken}`;
 
