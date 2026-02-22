@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Header from '@/components/header';
-import Footer from '@/components/footer';
 import UserAvatar from '@/components/user-avatar';
 import { Send, ArrowLeft, MessageCircle, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -35,7 +34,7 @@ export default function MessagesPage() {
                 // If ?to= param, find or start conversation with that user
                 if (toUserId && toUserId !== currentUser.id) {
                     const existing = (convos || []).find((c: Conversation) =>
-                        c.participants.includes(toUserId)
+                        c.participantIds.includes(toUserId)
                     );
                     if (existing) {
                         setActiveConversation(existing.id);
@@ -69,7 +68,7 @@ export default function MessagesPage() {
         if (!newMessage.trim() || sending) return;
         const recipientId = activeConversation?.startsWith('new-')
             ? activeConversation.replace('new-', '')
-            : conversations.find(c => c.id === activeConversation)?.participants.find(p => p !== currentUser?.id);
+            : conversations.find(c => c.id === activeConversation)?.participantIds.find(p => p !== currentUser?.id);
 
         if (!recipientId) return;
 
@@ -84,7 +83,7 @@ export default function MessagesPage() {
             const convos = await api.getConversations();
             setConversations(convos || []);
             if (activeConversation?.startsWith('new-') && convos?.length) {
-                const newConvo = convos.find((c: Conversation) => c.participants.includes(recipientId));
+                const newConvo = convos.find((c: Conversation) => c.participantIds.includes(recipientId));
                 if (newConvo) setActiveConversation(newConvo.id);
             }
         } catch (err) {
@@ -95,7 +94,7 @@ export default function MessagesPage() {
     };
 
     const getOtherUserId = (convo: Conversation) => {
-        return convo.participants.find(p => p !== currentUser?.id) || '';
+        return convo.participantIds.find(p => p !== currentUser?.id) || '';
     };
 
     const filteredConversations = useMemo(() => {
@@ -181,10 +180,10 @@ export default function MessagesPage() {
                                                 <UserAvatar userId={otherId} displayName={other?.displayName || 'User'} size="md" />
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-semibold text-sm truncate">{other?.displayName || 'Unknown User'}</p>
-                                                    <p className="text-xs text-foreground/40 truncate">{convo.lastMessage || 'No messages yet'}</p>
+                                                    <p className="text-xs text-foreground/40 truncate">{convo.lastMessageText || 'No messages yet'}</p>
                                                 </div>
-                                                {convo.updatedAt && (
-                                                    <span className="text-[10px] text-foreground/30 shrink-0">{timeAgo(convo.updatedAt)}</span>
+                                                {convo.lastMessageAt && (
+                                                    <span className="text-[10px] text-foreground/30 shrink-0">{timeAgo(convo.lastMessageAt)}</span>
                                                 )}
                                             </button>
                                         );
