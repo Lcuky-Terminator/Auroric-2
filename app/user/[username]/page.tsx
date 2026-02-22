@@ -7,7 +7,7 @@ import PinCard from '@/components/pin-card';
 import UserAvatar from '@/components/user-avatar';
 import FollowButton from '@/components/follow-button';
 import MasonryGrid from '@/components/masonry-grid';
-import { Share2, Link as LinkIcon, Copy } from 'lucide-react';
+import { Share2, Link as LinkIcon, Copy, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
 import { useRouter } from 'next/navigation';
@@ -93,7 +93,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
               <div className="flex flex-wrap gap-3">
                 {isLoggedIn && (
-                  <FollowButton isFollowing={isFollowing} onToggle={() => toggleFollow(user.id)} />
+                  <>
+                    <FollowButton isFollowing={isFollowing} onToggle={() => toggleFollow(user.id)} />
+                    <button onClick={() => router.push(`/messages?to=${user.id}`)} className="luxury-button-outline flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4" /> Message
+                    </button>
+                  </>
                 )}
                 <button onClick={handleShare} className="luxury-button-outline flex items-center gap-2">
                   <Share2 className="w-4 h-4" /> Share Profile
