@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { confirmVerification } from '@/lib/email-verification';
 import { useApp } from '@/lib/app-context';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -11,15 +10,11 @@ import Link from 'next/link';
 /**
  * /verify — Email verification callback page.
  *
- * Appwrite appends `?userId=xxx&secret=yyy` to this URL when the user
- * clicks the link in their verification email.
+ * The verification email contains a link like:
+ *   /verify?token=<jwt-token>
  *
- * This page:
- * 1. Reads `userId` and `secret` from the URL.
- * 2. Calls `confirmVerification(userId, secret)` which:
- *    a. Calls `account.updateVerification()` on the Appwrite client SDK.
- *    b. Calls `POST /api/auth/verify` to mirror the flag to the custom DB.
- * 3. Redirects the user to the home page on success.
+ * This page sends the token to POST /api/auth/verify to flip
+ * the emailVerified flag in the database.
  */
 export default function VerifyPage() {
   const searchParams = useSearchParams();
@@ -29,27 +24,33 @@ export default function VerifyPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const userId = searchParams.get('userId');
-    const secret = searchParams.get('secret');
+    const token = searchParams.get('token');
 
-    if (!userId || !secret) {
+    if (!token) {
       setStatus('error');
-      setErrorMessage('Invalid verification link — missing userId or secret.');
+      setErrorMessage('Invalid verification link — missing token.');
       return;
     }
 
-    confirmVerification(userId, secret)
-      .then(() => {
-        setStatus('success');
-        refresh(); // reload user data so emailVerified updates
-        // Redirect to home after 3 seconds
-        setTimeout(() => router.push('/'), 3000);
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.verified) {
+          setStatus('success');
+          refresh(); // reload user data so emailVerified updates
+          setTimeout(() => router.push('/'), 3000);
+        } else {
+          setStatus('error');
+          setErrorMessage(data.error || 'Verification failed.');
+        }
       })
-      .catch((err: any) => {
+      .catch((err) => {
         setStatus('error');
-        setErrorMessage(
-          err?.message || 'Verification failed. The link may have expired.',
-        );
+        setErrorMessage(err?.message || 'Verification failed. Please try again.');
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

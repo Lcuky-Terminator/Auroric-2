@@ -2,14 +2,13 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/lib/app-context';
-import { resendVerification } from '@/lib/email-verification';
 import { Mail, RefreshCw } from 'lucide-react';
 
 /**
  * /verify-email — "Check your inbox" page.
  *
  * Shown to users who are logged in but have not yet verified their email.
- * They can request a new verification email from here.
+ * They can request a new verification email from here (sent via Resend).
  */
 export default function VerifyEmailPage() {
   const { currentUser, logout } = useApp();
@@ -22,8 +21,13 @@ export default function VerifyEmailPage() {
     setError('');
     setResent(false);
     try {
-      await resendVerification();
-      setResent(true);
+      const res = await fetch('/api/auth/send-verification', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setResent(true);
+      } else {
+        setError(data.error || 'Failed to send verification email.');
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to resend verification email. Please try again.');
     } finally {
@@ -77,9 +81,13 @@ export default function VerifyEmailPage() {
             Didn&apos;t receive it? Check your spam folder or try a different email.
           </p>
           <p className="text-foreground/40 mt-1">
-            You must verify your email before you can use Auroric.
+            You must verify your email before you can use Auroric features.
           </p>
           <div className="flex items-center justify-center gap-4 mt-3">
+            <a href="/" className="text-accent/80 hover:text-accent smooth-transition">
+              Browse Auroric first
+            </a>
+            <span className="text-foreground/20">|</span>
             <button
               onClick={() => logout()}
               className="text-destructive/80 hover:text-destructive smooth-transition"

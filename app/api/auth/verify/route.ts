@@ -1,84 +1,67 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { updateUser, getUserByEmail, getUserFull } from '@/lib/db';
-import { Users, Client } from 'node-appwrite';
+import { updateUser, getUserFull } from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
-// Server-side Appwrite client for reading the Auth user
-const awClient = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1')
-  .setProject(process.env.APPWRITE_PROJECT_ID || '')
-  .setKey(process.env.APPWRITE_API_KEY || '');
-
-const awUsers = new Users(awClient);
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 /**
  * POST /api/auth/verify
  *
- * Called after the client successfully runs `account.updateVerification()`.
- * We verify the claim server-side by checking the Appwrite Auth user's
- * `emailVerification` flag and then mirror it to the custom DB user.
+ * Verifies a user's email using a JWT token sent via Resend.
+ * The token contains userId, email, and purpose='email-verification'.
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const { token } = await request.json();
 
-    // Try to identify the user via the existing JWT cookie first
-    let dbUser = await getCurrentUser();
-
-    // Fallback: if the body contains the Appwrite userId we can look up
-    // the Auth user's email and find the matching DB user.
-    if (!dbUser && body.userId) {
-      try {
-        const awUser = await awUsers.get(body.userId);
-        if (awUser.emailVerification) {
-          const dbMatch = await getUserByEmail(awUser.email);
-          if (dbMatch) {
-            dbUser = { ...dbMatch, passwordHash: undefined } as any;
-            // Also update the DB
-            await updateUser(dbMatch.id, { emailVerified: true } as any);
-            return NextResponse.json({ verified: true });
-          }
-        }
-      } catch (err: any) {
-        console.error('[Verify] Appwrite Auth lookup failed:', err?.message);
-      }
+    if (!token) {
+      return NextResponse.json({ error: 'Missing verification token' }, { status: 400 });
     }
 
-    if (!dbUser) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    // Look up the Appwrite Auth user by email
+    // Verify the JWT token
+    let payload: any;
     try {
-      const list = await awUsers.list([`equal("email", ["${dbUser.email}"])`]);
-      const awUser = list.users[0];
-
-      if (awUser?.emailVerification) {
-        await updateUser(dbUser.id, { emailVerified: true } as any);
-        return NextResponse.json({ verified: true });
-      }
-
-      return NextResponse.json({ error: 'Email not yet verified in Appwrite' }, { status: 400 });
+      payload = jwt.verify(token, JWT_SECRET);
     } catch (err: any) {
-      console.error('[Verify] Failed to check Appwrite Auth:', err?.message);
-      return NextResponse.json({ error: 'Verification check failed' }, { status: 500 });
+      if (err.name === 'TokenExpiredError') {
+        return NextResponse.json({ error: 'Verification link has expired. Please request a new one.' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Invalid verification token.' }, { status: 400 });
     }
+
+    if (payload.purpose !== 'email-verification') {
+      return NextResponse.json({ error: 'Invalid token purpose' }, { status: 400 });
+    }
+
+    // Update the user's emailVerified flag
+    const user = await getUserFull(payload.userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (user.emailVerified) {
+      return NextResponse.json({ verified: true, message: 'Email already verified' });
+    }
+
+    await updateUser(payload.userId, { emailVerified: true } as any);
+    return NextResponse.json({ verified: true, message: 'Email verified successfully!' });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 /**
- * GET /api/auth/verify?check=1
+ * GET /api/auth/verify
  *
  * Quick endpoint the client can poll to see if the current user is verified.
  */
 export async function GET() {
   try {
+    // Import dynamically to avoid circular issues
+    const { getCurrentUser } = await import('@/lib/auth');
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ verified: false });
 
-    // Re-read from DB in case it was updated
     const full = await getUserFull(user.id);
     return NextResponse.json({ verified: full?.emailVerified ?? false });
   } catch {

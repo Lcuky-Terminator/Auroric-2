@@ -249,6 +249,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser]);
 
+  // Helper: check if user is email-verified; redirect to verify page if not
+  const requireVerified = useCallback((): boolean => {
+    if (!currentUser) return false;
+    if (!currentUser.emailVerified) {
+      window.location.href = '/verify-email';
+      return false;
+    }
+    return true;
+  }, [currentUser]);
+
   const value: AppContextType = {
     currentUser,
     isLoggedIn: !!currentUser,
@@ -261,6 +271,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     pins,
     getPin: (id) => pins.find(p => p.id === id),
     createPin: async (pin) => {
+      if (!requireVerified()) throw new Error('Email verification required');
       const newPin = await api.createPin(pin);
       setPins(prev => [newPin, ...prev]);
       if (newPin.boardId) {
@@ -277,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       api.deletePin(id).catch(console.error);
     },
     toggleLike: (pinId) => {
-      if (!currentUser) return;
+      if (!currentUser || !requireVerified()) return;
       const userId = currentUser.id;
       // Optimistic update
       setPins(prev => prev.map(p => {
@@ -290,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       api.toggleLike(pinId).then(() => refreshAfterMutation()).catch(() => loadData());
     },
     toggleSave: (pinId) => {
-      if (!currentUser) return;
+      if (!currentUser || !requireVerified()) return;
       const userId = currentUser.id;
       // Optimistic update
       setPins(prev => prev.map(p => {
@@ -303,7 +314,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       api.toggleSave(pinId).then(() => refreshAfterMutation()).catch(() => loadData());
     },
     addComment: (pinId, text) => {
-      if (!currentUser) return;
+      if (!currentUser || !requireVerified()) return;
       api.addComment(pinId, text).then(comment => {
         setPins(prev => prev.map(p =>
           p.id === pinId ? { ...p, comments: [...p.comments, comment] } : p
@@ -409,7 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getUser: (id) => users.find(u => u.id === id),
     getUserByUsername: (username) => users.find(u => u.username.toLowerCase() === username.toLowerCase()),
     toggleFollow: (targetUserId) => {
-      if (!currentUser) return;
+      if (!currentUser || !requireVerified()) return;
       const userId = currentUser.id;
       // Optimistic update
       const isFollowing = currentUser.following.includes(targetUserId);
@@ -502,12 +513,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Email verification guard — currently non-blocking.
- * Users can use the app without email verification.
- * A banner or prompt can be shown separately to encourage verification.
+ * Email verification guard — shows a non-blocking banner for unverified users.
+ * Users can still browse the app, but feature actions are gated.
  */
 function EmailVerificationGuard({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  const { currentUser, isLoggedIn } = useApp();
+  const pathname = usePathname();
+  const [dismissed, setDismissed] = useState(false);
+
+  const showBanner = isLoggedIn && currentUser && !currentUser.emailVerified
+    && !dismissed
+    && !['/verify-email', '/verify', '/settings'].includes(pathname);
+
+  return (
+    <>
+      {showBanner && (
+        <div className="bg-accent/10 border-b border-accent/30 px-4 py-2.5 text-center text-sm flex items-center justify-center gap-3">
+          <span className="text-foreground/80">
+            📧 Please verify your email to unlock all features (commenting, posting, following).
+          </span>
+          <a href="/verify-email" className="text-accent font-semibold hover:underline">Verify now</a>
+          <button onClick={() => setDismissed(true)} className="text-foreground/40 hover:text-foreground/60 ml-2">✕</button>
+        </div>
+      )}
+      {children}
+    </>
+  );
 }
 
 const noop = () => { };
