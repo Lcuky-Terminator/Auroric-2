@@ -42,7 +42,7 @@ export async function POST() {
         username,
         displayName: name,
         email,
-        passwordHash: hashPassword(crypto.randomUUID()), // random password for Google users
+        passwordHash: '', // Google users have no password — empty sentinel value
         bio: '',
         avatar,
         website: '',

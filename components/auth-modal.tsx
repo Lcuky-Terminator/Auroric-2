@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/lib/app-context';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Check, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 
 /** Only lowercase letters, numbers, and underscores. 3-20 chars. */
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
@@ -26,6 +26,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -287,13 +288,23 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-1">Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              placeholder="••••••••"
-              className="w-full bg-background/50 border border-border/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                placeholder="••••••••"
+                className="w-full bg-background/50 border border-border/30 rounded-lg px-4 py-2.5 pr-10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/60 smooth-transition"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {mode === 'signup' && formData.password && formData.password.length < 8 && (
               <p className="text-xs mt-1 text-destructive">Must be at least 8 characters</p>
             )}
@@ -303,7 +314,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             <div>
               <label className="block text-sm font-semibold text-foreground mb-1">Confirm Password</label>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                 placeholder="••••••••"

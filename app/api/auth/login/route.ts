@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     if (!verifyPassword(password, user.passwordHash)) {
-      return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid password. If you signed up with Google, please use the "Sign in with Google" button instead.' }, { status: 401 });
     }
 
     const token = await createToken(user.id);
