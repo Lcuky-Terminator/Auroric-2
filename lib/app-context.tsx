@@ -502,37 +502,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Global guard that forces unverified logged-in users to /verify-email.
- * They cannot access any other page until they verify.
+ * Email verification guard — currently non-blocking.
+ * Users can use the app without email verification.
+ * A banner or prompt can be shown separately to encourage verification.
  */
 function EmailVerificationGuard({ children }: { children: ReactNode }) {
-  const { currentUser, isLoggedIn } = useApp();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // Pages that unverified users ARE allowed to visit
-  const allowedPaths = ['/verify-email', '/verify'];
-  const isAllowedPath = allowedPaths.includes(pathname);
-
-  useEffect(() => {
-    if (isLoggedIn && currentUser && !currentUser.emailVerified && !isAllowedPath) {
-      router.replace('/verify-email');
-    }
-  }, [isLoggedIn, currentUser, isAllowedPath, router]);
-
-  // If logged in, unverified, and trying to access a restricted page, show loading
-  if (isLoggedIn && currentUser && !currentUser.emailVerified && !isAllowedPath) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-foreground/60">Redirecting to email verification...</p>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }
 
-const noop = () => {};
+const noop = () => { };
 const noopReturn = () => undefined as any;
 const noopArray = () => [] as any;
 const noopPromisePin = () => Promise.resolve({} as any);
@@ -546,7 +524,7 @@ const defaultContext: AppContextType = {
   signup: noopPromiseBool,
   loginWithGoogle: noopPromiseBool,
   logout: noop,
-  updateProfile: async () => {},
+  updateProfile: async () => { },
   pins: [],
   getPin: noopReturn,
   createPin: noopPromisePin,

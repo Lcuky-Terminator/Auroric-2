@@ -12,3 +12,4 @@ node_modules/
 # Backend data
 data/db.json
 public/uploads/
+.vercel
