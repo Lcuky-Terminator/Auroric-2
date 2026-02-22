@@ -23,7 +23,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const body = await request.json();
     // Only allow safe fields to be updated
-    const allowedFields = ['displayName', 'email', 'bio', 'avatar', 'website', 'settings'];
+    const allowedFields = ['displayName', 'email', 'bio', 'avatar', 'website', 'settings', 'gender', 'dob', 'country'];
     const safeUpdates: Record<string, any> = {};
     for (const key of allowedFields) {
       if (body[key] !== undefined) safeUpdates[key] = body[key];

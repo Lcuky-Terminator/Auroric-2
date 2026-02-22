@@ -52,6 +52,7 @@ function docToUser(doc: any): ServerUser {
 }
 
 function userToDoc(u: ServerUser): Record<string, any> {
+  const s = u.settings || {} as any;
   return {
     username: u.username,
     displayName: u.displayName,
@@ -76,13 +77,13 @@ function userToDoc(u: ServerUser): Record<string, any> {
     passwordChangeCount: u.passwordChangeCount ?? 0,
     passwordChangeLockUntil: u.passwordChangeLockUntil || '',
     accountStatus: u.accountStatus || 'active',
-    settingsPrivateProfile: u.settings.privateProfile,
-    settingsShowActivity: u.settings.showActivity,
-    settingsAllowMessages: u.settings.allowMessages,
-    settingsAllowNotifications: u.settings.allowNotifications,
-    settingsEmailOnNewFollower: u.settings.emailOnNewFollower,
-    settingsEmailOnPinInteraction: u.settings.emailOnPinInteraction,
-    settingsTheme: u.settings.theme,
+    settingsPrivateProfile: s.privateProfile ?? false,
+    settingsShowActivity: s.showActivity ?? true,
+    settingsAllowMessages: s.allowMessages ?? true,
+    settingsAllowNotifications: s.allowNotifications ?? true,
+    settingsEmailOnNewFollower: s.emailOnNewFollower ?? false,
+    settingsEmailOnPinInteraction: s.emailOnPinInteraction ?? false,
+    settingsTheme: s.theme || 'dark',
   };
 }
 
