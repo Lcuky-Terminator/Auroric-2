@@ -17,6 +17,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
 
+    if (!user.passwordHash) {
+      // User signed up via Google and has no password set
+      return NextResponse.json({ error: 'This account uses Google sign-in. Please use the "Sign in with Google" button.' }, { status: 401 });
+    }
+
     if (!verifyPassword(password, user.passwordHash)) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }

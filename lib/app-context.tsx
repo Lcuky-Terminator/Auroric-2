@@ -202,8 +202,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCurrentUser(user);
       await loadData();
       return true;
-    } catch {
-      return false;
+    } catch (err) {
+      // Re-throw so the UI can display the specific error message
+      throw err;
     }
   }, [loadData]);
 

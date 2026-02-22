@@ -111,8 +111,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
         if (success) {
           onClose();
           setFormData({ username: '', displayName: '', email: '', password: '', confirmPassword: '' });
-        } else {
-          setError('Invalid credentials. Try "alexdesigner" with password "password123".');
         }
       } else {
         if (!formData.username || !formData.displayName || !formData.email || !formData.password) {
@@ -152,8 +150,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           setError('Username or email already exists');
         }
       }
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -241,16 +239,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 type="text"
                 value={formData.username}
                 onChange={mode === 'signup' ? handleUsernameChange : (e => setFormData({ ...formData, username: e.target.value }))}
-                placeholder={mode === 'login' ? 'alexdesigner' : 'e.g. johndoe'}
-                className={`w-full bg-background/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 smooth-transition ${
-                  mode === 'signup' && usernameHint.type === 'error'
-                    ? 'border-destructive/60 focus:border-destructive/80 focus:ring-destructive/30'
-                    : mode === 'signup' && usernameHint.type === 'taken'
+                placeholder={mode === 'login' ? 'your username or email' : 'e.g. johndoe'}
+                className={`w-full bg-background/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 smooth-transition ${mode === 'signup' && usernameHint.type === 'error'
+                  ? 'border-destructive/60 focus:border-destructive/80 focus:ring-destructive/30'
+                  : mode === 'signup' && usernameHint.type === 'taken'
                     ? 'border-destructive/60 focus:border-destructive/80 focus:ring-destructive/30'
                     : mode === 'signup' && usernameHint.type === 'available'
-                    ? 'border-green-500/60 focus:border-green-500/80 focus:ring-green-500/30'
-                    : 'border-border/30 focus:border-accent/50 focus:ring-accent/20'
-                }`}
+                      ? 'border-green-500/60 focus:border-green-500/80 focus:ring-green-500/30'
+                      : 'border-border/30 focus:border-accent/50 focus:ring-accent/20'
+                  }`}
               />
               {/* Status icon */}
               {mode === 'signup' && formData.username && (
@@ -263,11 +260,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             </div>
             {/* Inline hint message */}
             {mode === 'signup' && usernameHint.message && (
-              <p className={`text-xs mt-1 ${
-                usernameHint.type === 'available' ? 'text-green-500' :
+              <p className={`text-xs mt-1 ${usernameHint.type === 'available' ? 'text-green-500' :
                 usernameHint.type === 'checking' ? 'text-foreground/40' :
-                'text-destructive'
-              }`}>
+                  'text-destructive'
+                }`}>
                 {usernameHint.message}
               </p>
             )}
@@ -311,13 +307,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 value={formData.confirmPassword}
                 onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                 placeholder="••••••••"
-                className={`w-full bg-background/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 smooth-transition ${
-                  formData.confirmPassword && formData.confirmPassword !== formData.password
-                    ? 'border-destructive/60 focus:border-destructive/80 focus:ring-destructive/30'
-                    : formData.confirmPassword && formData.confirmPassword === formData.password
+                className={`w-full bg-background/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 smooth-transition ${formData.confirmPassword && formData.confirmPassword !== formData.password
+                  ? 'border-destructive/60 focus:border-destructive/80 focus:ring-destructive/30'
+                  : formData.confirmPassword && formData.confirmPassword === formData.password
                     ? 'border-green-500/60 focus:border-green-500/80 focus:ring-green-500/30'
                     : 'border-border/30 focus:border-accent/50 focus:ring-accent/20'
-                }`}
+                  }`}
               />
               {formData.confirmPassword && formData.confirmPassword !== formData.password && (
                 <p className="text-xs mt-1 text-destructive flex items-center gap-1">
