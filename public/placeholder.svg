@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1f"/>
+  <g transform="translate(200,180)" fill="none" stroke="#555" stroke-width="2">
+    <rect x="-40" y="-30" width="80" height="60" rx="6"/>
+    <circle cx="-18" cy="-10" r="8"/>
+    <polyline points="-30,20 -10,0 10,10 30,-10 40,20" stroke-linejoin="round"/>
+  </g>
+  <text x="200" y="240" text-anchor="middle" fill="#555" font-family="sans-serif" font-size="14">Image unavailable</text>
+</svg>

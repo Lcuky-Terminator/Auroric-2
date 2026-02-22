@@ -1,0 +1,210 @@
+{
+    "description": "Create these attributes in Appwrite Console > Database > Collections. Existing collections need new attributes added; new collections need to be created first.",
+    "collections": {
+        "users": {
+            "note": "EXISTING collection — add these NEW attributes alongside existing ones",
+            "new_attributes": [
+                {
+                    "key": "isVerified",
+                    "type": "boolean",
+                    "default": false,
+                    "required": false
+                },
+                {
+                    "key": "verificationType",
+                    "type": "string",
+                    "size": 20,
+                    "default": "none",
+                    "required": false
+                },
+                {
+                    "key": "isPromoted",
+                    "type": "boolean",
+                    "default": false,
+                    "required": false
+                },
+                {
+                    "key": "gender",
+                    "type": "string",
+                    "size": 30,
+                    "default": "",
+                    "required": false
+                },
+                {
+                    "key": "dob",
+                    "type": "string",
+                    "size": 30,
+                    "default": "",
+                    "required": false
+                },
+                {
+                    "key": "country",
+                    "type": "string",
+                    "size": 100,
+                    "default": "",
+                    "required": false
+                },
+                {
+                    "key": "passwordChangeCount",
+                    "type": "integer",
+                    "default": 0,
+                    "required": false
+                },
+                {
+                    "key": "passwordChangeLockUntil",
+                    "type": "string",
+                    "size": 50,
+                    "default": "",
+                    "required": false
+                },
+                {
+                    "key": "accountStatus",
+                    "type": "string",
+                    "size": 30,
+                    "default": "active",
+                    "required": false
+                }
+            ]
+        },
+        "conversations": {
+            "note": "NEW collection — create with ID 'conversations'",
+            "attributes": [
+                {
+                    "key": "participantIdsJson",
+                    "type": "string",
+                    "size": 500,
+                    "required": true
+                },
+                {
+                    "key": "lastMessageText",
+                    "type": "string",
+                    "size": 200,
+                    "required": false,
+                    "default": ""
+                },
+                {
+                    "key": "lastMessageAt",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_lastMessageAt",
+                    "type": "key",
+                    "attributes": [
+                        "lastMessageAt"
+                    ],
+                    "orders": [
+                        "DESC"
+                    ]
+                }
+            ]
+        },
+        "messages": {
+            "note": "NEW collection — create with ID 'messages'",
+            "attributes": [
+                {
+                    "key": "conversationId",
+                    "type": "string",
+                    "size": 36,
+                    "required": true
+                },
+                {
+                    "key": "senderId",
+                    "type": "string",
+                    "size": 36,
+                    "required": true
+                },
+                {
+                    "key": "text",
+                    "type": "string",
+                    "size": 5000,
+                    "required": true
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_conversationId",
+                    "type": "key",
+                    "attributes": [
+                        "conversationId"
+                    ]
+                },
+                {
+                    "key": "idx_senderId",
+                    "type": "key",
+                    "attributes": [
+                        "senderId"
+                    ]
+                },
+                {
+                    "key": "idx_conversationId_created",
+                    "type": "key",
+                    "attributes": [
+                        "conversationId",
+                        "createdAt"
+                    ],
+                    "orders": [
+                        "ASC",
+                        "DESC"
+                    ]
+                }
+            ]
+        },
+        "deletion_requests": {
+            "note": "NEW collection — create with ID 'deletion_requests'",
+            "attributes": [
+                {
+                    "key": "userId",
+                    "type": "string",
+                    "size": 36,
+                    "required": true
+                },
+                {
+                    "key": "reason",
+                    "type": "string",
+                    "size": 1000,
+                    "required": false,
+                    "default": ""
+                },
+                {
+                    "key": "status",
+                    "type": "string",
+                    "size": 20,
+                    "required": true,
+                    "default": "pending"
+                },
+                {
+                    "key": "createdAt",
+                    "type": "string",
+                    "size": 50,
+                    "required": true
+                }
+            ],
+            "indexes": [
+                {
+                    "key": "idx_userId_status",
+                    "type": "key",
+                    "attributes": [
+                        "userId",
+                        "status"
+                    ]
+                }
+            ]
+        }
+    }
+}
