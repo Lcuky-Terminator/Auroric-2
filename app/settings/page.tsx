@@ -51,19 +51,20 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (currentUser) {
-      setEmail(currentUser.email);
-      setDisplayName(currentUser.displayName);
-      setBio(currentUser.bio);
-      setWebsite(currentUser.website);
+      const s = currentUser.settings || {} as any;
+      setEmail(currentUser.email || '');
+      setDisplayName(currentUser.displayName || '');
+      setBio(currentUser.bio || '');
+      setWebsite(currentUser.website || '');
       setGender(currentUser.gender || '');
       setDob(currentUser.dob || '');
       setCountry(currentUser.country || '');
-      setPrivateProfile(currentUser.settings.privateProfile);
-      setShowActivity(currentUser.settings.showActivity);
-      setAllowMessages(currentUser.settings.allowMessages);
-      setAllowNotifications(currentUser.settings.allowNotifications);
-      setEmailOnNewFollower(currentUser.settings.emailOnNewFollower);
-      setEmailOnPinInteraction(currentUser.settings.emailOnPinInteraction);
+      setPrivateProfile(s.privateProfile ?? false);
+      setShowActivity(s.showActivity ?? true);
+      setAllowMessages(s.allowMessages ?? true);
+      setAllowNotifications(s.allowNotifications ?? true);
+      setEmailOnNewFollower(s.emailOnNewFollower ?? true);
+      setEmailOnPinInteraction(s.emailOnPinInteraction ?? true);
     }
   }, [currentUser]);
 
@@ -97,12 +98,14 @@ export default function SettingsPage() {
   };
 
   const handleSavePrivacy = async () => {
-    await updateProfile({ settings: { ...currentUser.settings, privateProfile, showActivity, allowMessages } });
+    const s = currentUser.settings || {} as any;
+    await updateProfile({ settings: { ...s, privateProfile, showActivity, allowMessages } });
     showSaved();
   };
 
   const handleSaveNotifications = async () => {
-    await updateProfile({ settings: { ...currentUser.settings, allowNotifications, emailOnNewFollower, emailOnPinInteraction } });
+    const s = currentUser.settings || {} as any;
+    await updateProfile({ settings: { ...s, allowNotifications, emailOnNewFollower, emailOnPinInteraction } });
     showSaved();
   };
 
@@ -195,7 +198,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <h1 className="text-4xl font-bold">Settings & Preferences</h1>
-              {currentUser.isVerified && (
+              {currentUser.isVerified && currentUser.verificationType && (
                 <VerifiedBadge size="lg" type={currentUser.verificationType} />
               )}
             </div>
@@ -256,7 +259,7 @@ export default function SettingsPage() {
                 <div className="pin-card p-8 animate-slideUp">
                   <h2 className="text-2xl font-bold mb-2">Profile Details</h2>
                   <p className="text-foreground/50 text-sm mb-6">
-                    Optional information. {currentUser.settings.privateProfile
+                    Optional information. {currentUser.settings?.privateProfile
                       ? 'Your profile is Private — these fields are hidden from others.'
                       : 'Your profile is Public — these fields are visible to everyone.'}
                   </p>
@@ -393,8 +396,8 @@ export default function SettingsPage() {
 
                     {passwordMessage && (
                       <div className={`flex items-start gap-2 p-3 rounded-lg mb-4 ${passwordMessage.type === 'success' ? 'bg-green-500/10 border border-green-500/20 text-green-300' :
-                          passwordMessage.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-300' :
-                            'bg-red-500/10 border border-red-500/20 text-red-300'
+                        passwordMessage.type === 'warning' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-300' :
+                          'bg-red-500/10 border border-red-500/20 text-red-300'
                         }`}>
                         {passwordMessage.type === 'warning' && <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />}
                         {passwordMessage.type === 'success' && <Check className="w-4 h-4 mt-0.5 shrink-0" />}
@@ -423,7 +426,7 @@ export default function SettingsPage() {
                         <p className="text-green-300 font-medium">✓ Your deletion request has been submitted.</p>
                         <p className="text-foreground/50 text-sm mt-1">Our Customer Care team will process it within 3–5 business days.</p>
                       </div>
-                    ) : currentUser.accountStatus === 'pending_deletion' ? (
+                    ) : currentUser.accountStatus && currentUser.accountStatus === 'pending_deletion' ? (
                       <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                         <p className="text-amber-300 font-medium">⏳ Account deletion is pending</p>
                         <p className="text-foreground/50 text-sm mt-1">Your request is being processed by our Customer Care team.</p>
