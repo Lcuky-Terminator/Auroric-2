@@ -129,7 +129,9 @@ export default function MessagesPage() {
     const activeOtherUserId = activeConversation?.startsWith('new-')
         ? activeConversation.replace('new-', '')
         : activeConversation
-            ? getOtherUserId(conversations.find(c => c.id === activeConversation)!)
+            ? (conversations.find(c => c.id === activeConversation)
+                ? getOtherUserId(conversations.find(c => c.id === activeConversation)!)
+                : null)
             : null;
 
     const activeOtherUser = activeOtherUserId ? getUser(activeOtherUserId) : null;

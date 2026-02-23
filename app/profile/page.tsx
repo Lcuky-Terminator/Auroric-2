@@ -6,6 +6,7 @@ import Footer from '@/components/footer';
 import PinCard from '@/components/pin-card';
 import UserAvatar from '@/components/user-avatar';
 import MasonryGrid from '@/components/masonry-grid';
+import FollowListModal from '@/components/follow-list-modal';
 import { Edit3, Share2, Settings, Bookmark, Heart, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
@@ -15,6 +16,7 @@ export default function ProfilePage() {
   const { currentUser, isLoggedIn, pins, getPinsByUser, getSavedPins, getBoardsByUser, openAuthModal } = useApp();
   const [activeTab, setActiveTab] = useState<'pins' | 'saved' | 'boards'>('pins');
   const [copied, setCopied] = useState(false);
+  const [followModal, setFollowModal] = useState<{ type: 'Followers' | 'Following'; ids: string[] } | null>(null);
 
   if (!isLoggedIn || !currentUser) {
     return (
@@ -71,14 +73,14 @@ export default function ProfilePage() {
                   <div className="text-2xl font-bold text-accent">{myPins.length}</div>
                   <p className="text-sm text-foreground/60">Pins</p>
                 </div>
-                <div>
+                <button onClick={() => setFollowModal({ type: 'Followers', ids: currentUser.followers })} className="text-left hover:bg-card/30 rounded-lg px-2 py-1 -mx-2 smooth-transition">
                   <div className="text-2xl font-bold text-accent">{formatCount(currentUser.followers.length)}</div>
                   <p className="text-sm text-foreground/60">Followers</p>
-                </div>
-                <div>
+                </button>
+                <button onClick={() => setFollowModal({ type: 'Following', ids: currentUser.following })} className="text-left hover:bg-card/30 rounded-lg px-2 py-1 -mx-2 smooth-transition">
                   <div className="text-2xl font-bold text-accent">{formatCount(currentUser.following.length)}</div>
                   <p className="text-sm text-foreground/60">Following</p>
-                </div>
+                </button>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -195,6 +197,15 @@ export default function ProfilePage() {
       </main>
 
       <Footer />
+
+      {followModal && (
+        <FollowListModal
+          isOpen={true}
+          onClose={() => setFollowModal(null)}
+          title={followModal.type}
+          userIds={followModal.ids}
+        />
+      )}
     </div>
   );
 }

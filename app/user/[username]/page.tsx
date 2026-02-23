@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useMemo, use } from 'react';
+import React, { useMemo, use, useState } from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import PinCard from '@/components/pin-card';
 import UserAvatar from '@/components/user-avatar';
 import FollowButton from '@/components/follow-button';
 import MasonryGrid from '@/components/masonry-grid';
+import FollowListModal from '@/components/follow-list-modal';
 import { Share2, Link as LinkIcon, Copy, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
@@ -21,6 +22,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   const user = getUserByUsername(username);
   const isOwnProfile = user && currentUser ? user.id === currentUser.id : false;
   const isFollowing = user && currentUser ? currentUser.following.includes(user.id) : false;
+  const [followModal, setFollowModal] = useState<{ type: 'Followers' | 'Following'; ids: string[] } | null>(null);
 
   const userPins = useMemo(() => user ? getPinsByUser(user.id).filter(p => !p.isPrivate) : [], [user, getPinsByUser]);
   const userBoards = useMemo(() => user ? getBoardsByUser(user.id).filter(b => !b.isPrivate) : [], [user, getBoardsByUser]);
@@ -73,14 +75,14 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
               </div>
 
               <div className="flex gap-6 mb-6">
-                <div>
+                <button onClick={() => setFollowModal({ type: 'Followers', ids: user.followers })} className="text-left hover:bg-card/30 rounded-lg px-2 py-1 -mx-2 smooth-transition">
                   <div className="text-2xl font-bold text-accent">{formatCount(user.followers.length)}</div>
                   <p className="text-sm text-foreground/60">Followers</p>
-                </div>
-                <div>
+                </button>
+                <button onClick={() => setFollowModal({ type: 'Following', ids: user.following })} className="text-left hover:bg-card/30 rounded-lg px-2 py-1 -mx-2 smooth-transition">
                   <div className="text-2xl font-bold text-accent">{formatCount(user.following.length)}</div>
                   <p className="text-sm text-foreground/60">Following</p>
-                </div>
+                </button>
                 <div>
                   <div className="text-2xl font-bold text-accent">{userPins.length}</div>
                   <p className="text-sm text-foreground/60">Pins</p>
@@ -144,6 +146,15 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
       </main>
 
       <Footer />
+
+      {followModal && (
+        <FollowListModal
+          isOpen={true}
+          onClose={() => setFollowModal(null)}
+          title={followModal.type}
+          userIds={followModal.ids}
+        />
+      )}
     </div>
   );
 }
