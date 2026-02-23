@@ -122,8 +122,8 @@ export interface DeletionRequest {
 // ── Constants ──
 
 /** Storage limits in bytes */
-export const CHAT_STORAGE_LIMIT_STANDARD = 1 * 1024 * 1024; // 1 MB
-export const CHAT_STORAGE_LIMIT_VERIFIED = 5 * 1024 * 1024; // 5 MB
+export const CHAT_STORAGE_LIMIT_STANDARD = 3 * 1024 * 1024; // 3 MB
+export const CHAT_STORAGE_LIMIT_VERIFIED = 10 * 1024 * 1024; // 10 MB
 
 /** Password rate-limiting */
 export const PASSWORD_CHANGE_MAX_ATTEMPTS = 3;

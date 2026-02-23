@@ -356,8 +356,8 @@ export default function SettingsPage() {
                   <h2 className="text-2xl font-bold mb-2">Chat Storage</h2>
                   <p className="text-foreground/50 text-sm mb-6">
                     {currentUser.isVerified
-                      ? 'As a Verified user, you have 5 MB of chat storage.'
-                      : 'Standard accounts have 1 MB of chat storage. Upgrade for more.'}
+                      ? 'As a Verified user, you have 10 MB of chat storage.'
+                      : 'Standard accounts have 3 MB of chat storage. Upgrade for more.'}
                   </p>
                   <ChatStorageBar />
                 </div>

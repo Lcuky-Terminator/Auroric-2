@@ -145,7 +145,7 @@ export default function ChatStorageBar() {
                         <p className="text-sm text-foreground/60 mb-4">
                             Switch to <span className="text-accent font-semibold">Pro</span> or{' '}
                             <span className="text-accent font-semibold">Get Verified</span> to upgrade
-                            from 1 MB to 5 MB of chat storage.
+                            from 3 MB to 10 MB of chat storage.
                         </p>
                         <div className="flex flex-wrap gap-3">
                             <button className="luxury-button text-sm px-4 py-2 flex items-center gap-1.5">
