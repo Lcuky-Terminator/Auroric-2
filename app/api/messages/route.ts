@@ -9,7 +9,6 @@ import {
     getUserChatStorageBytes,
     getChatStorageLimit,
     enforceStorageQuota,
-    isBlocked,
 } from '@/lib/db';
 
 /**
@@ -68,16 +67,6 @@ export async function POST(req: NextRequest) {
         if (!recipient.settings.allowMessages) {
             return NextResponse.json(
                 { error: 'This user has disabled direct messages' },
-                { status: 403 }
-            );
-        }
-
-        // Check block status both ways
-        const blockedByRecipient = await isBlocked(recipientId, user.id);
-        const blockedBySender = await isBlocked(user.id, recipientId);
-        if (blockedByRecipient || blockedBySender) {
-            return NextResponse.json(
-                { error: 'Cannot send message to this user' },
                 { status: 403 }
             );
         }

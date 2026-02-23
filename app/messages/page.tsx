@@ -3,43 +3,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Header from '@/components/header';
 import UserAvatar from '@/components/user-avatar';
-import { Send, ArrowLeft, MessageCircle, Search, Lock } from 'lucide-react';
+import { Send, ArrowLeft, MessageCircle, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/app-context';
 import { api } from '@/lib/api-client';
 import { timeAgo } from '@/lib/helpers';
 import type { Conversation, Message } from '@/lib/types';
-import { ensureKeyPair, loadPrivateKey, encryptMessage, decryptMessage } from '@/lib/crypto-utils';
-
-function E2EEMessageBubble({ msg, isMe, myPrivateKey, myId }: { msg: Message, isMe: boolean, myPrivateKey: CryptoKey | null, myId: string }) {
-    const [plaintext, setPlaintext] = useState<string>('Decrypting...');
-
-    useEffect(() => {
-        if (!myPrivateKey) return;
-        if (!msg.text.startsWith('{')) {
-            // Legacy plaintext message
-            setPlaintext(msg.text);
-            return;
-        }
-        decryptMessage(msg.text, myId, myPrivateKey)
-            .then(setPlaintext)
-            .catch(() => setPlaintext("Failed to decrypt"));
-    }, [msg.text, myPrivateKey, myId]);
-
-    return (
-        <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl ${isMe ? 'bg-accent/20 text-foreground rounded-br-md' : 'bg-card/50 text-foreground rounded-bl-md'}`}>
-                <p className="text-sm whitespace-pre-wrap break-words">{plaintext}</p>
-                <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    {msg.text.startsWith('{') && <Lock className={`w-3 h-3 ${isMe ? 'text-accent/50' : 'text-foreground/30'}`} />}
-                    <p className={`text-[10px] ${isMe ? 'text-accent/50' : 'text-foreground/30'}`}>
-                        {msg.createdAt ? timeAgo(msg.createdAt) : ''}
-                    </p>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function MessagesPage() {
     const searchParams = useSearchParams();
@@ -53,24 +22,7 @@ export default function MessagesPage() {
     const [sending, setSending] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [myPublicKey, setMyPublicKey] = useState<string>('');
-    const [privateKeyLoaded, setPrivateKeyLoaded] = useState<CryptoKey | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // E2EE Setup
-    useEffect(() => {
-        if (!isLoggedIn || !currentUser) return;
-        ensureKeyPair(currentUser.id).then(async ({ publicKeyJwk, isNew }) => {
-            let jwkToUse = publicKeyJwk || currentUser.publicKey || '';
-            if (isNew && publicKeyJwk) {
-                await api.updateUser(currentUser.id, { publicKey: publicKeyJwk });
-                jwkToUse = publicKeyJwk;
-            }
-            setMyPublicKey(jwkToUse);
-            const key = await loadPrivateKey(currentUser.id);
-            setPrivateKeyLoaded(key);
-        }).catch(err => console.error("E2EE Init failed:", err));
-    }, [isLoggedIn, currentUser]);
 
     // Load conversations
     useEffect(() => {
@@ -120,23 +72,9 @@ export default function MessagesPage() {
 
         if (!recipientId) return;
 
-        const recipient = getUser(recipientId);
-        if (!recipient?.publicKey) {
-            alert("This user has not enabled end-to-end encryption yet. They must log in first.");
-            return;
-        }
-
         setSending(true);
         try {
-            const encryptedText = await encryptMessage(
-                newMessage.trim(),
-                currentUser!.id,
-                myPublicKey,
-                recipientId,
-                recipient.publicKey
-            );
-
-            const result = await api.sendMessage(recipientId, encryptedText);
+            const result = await api.sendMessage(recipientId, newMessage.trim());
             if (result?.message) {
                 setMessages(prev => [...prev, result.message]);
             }
@@ -297,15 +235,19 @@ export default function MessagesPage() {
                                                 <p className="text-foreground/40 text-sm">No messages yet. Say hello! 👋</p>
                                             </div>
                                         )}
-                                        {messages.map(msg => (
-                                            <E2EEMessageBubble
-                                                key={msg.id}
-                                                msg={msg}
-                                                isMe={msg.senderId === currentUser?.id}
-                                                myPrivateKey={privateKeyLoaded}
-                                                myId={currentUser?.id || ''}
-                                            />
-                                        ))}
+                                        {messages.map(msg => {
+                                            const isMe = msg.senderId === currentUser?.id;
+                                            return (
+                                                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                                    <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl ${isMe ? 'bg-accent/20 text-foreground rounded-br-md' : 'bg-card/50 text-foreground rounded-bl-md'}`}>
+                                                        <p className="text-sm">{msg.text}</p>
+                                                        <p className={`text-[10px] mt-1 ${isMe ? 'text-accent/50' : 'text-foreground/30'}`}>
+                                                            {msg.createdAt ? timeAgo(msg.createdAt) : ''}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                         <div ref={messagesEndRef} />
                                     </div>
 

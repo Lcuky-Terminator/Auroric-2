@@ -20,7 +20,6 @@ export interface User {
   gender?: string;
   dob?: string;
   country?: string;
-  publicKey?: string; // JWK-encoded RSA public key for E2EE
   // ── Account Security ──
   passwordChangeCount: number;
   passwordChangeLockUntil?: string;
@@ -117,13 +116,6 @@ export interface DeletionRequest {
   userId: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-}
-
-export interface BlockedUser {
-  id: string;
-  blockerId: string;
-  blockedId: string;
   createdAt: string;
 }
 

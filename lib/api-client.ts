@@ -166,10 +166,6 @@ export const api = {
       body: JSON.stringify(updates),
     }),
 
-  blockUser: (id: string) => fetchJson<{ blocked: boolean }>(`/api/users/${id}/block`, { method: 'POST' }),
-
-  getBlockStatus: (id: string) => fetchJson<{ blocked: boolean }>(`/api/users/${id}/block`),
-
   toggleFollow: (userId: string) =>
     fetchJson<{ following: boolean }>(`/api/users/${userId}/follow`, { method: 'POST' }),
 

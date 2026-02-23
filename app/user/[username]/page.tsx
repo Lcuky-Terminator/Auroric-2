@@ -8,10 +8,9 @@ import UserAvatar from '@/components/user-avatar';
 import FollowButton from '@/components/follow-button';
 import MasonryGrid from '@/components/masonry-grid';
 import FollowListModal from '@/components/follow-list-modal';
-import { Share2, Link as LinkIcon, Copy, MessageCircle, Ban } from 'lucide-react';
+import { Share2, Link as LinkIcon, Copy, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
-import { api } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 import { formatCount, timeAgo } from '@/lib/helpers';
 
@@ -51,18 +50,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => { });
-  };
-
-  const handleBlock = async () => {
-    if (!user) return;
-    if (confirm(`Are you sure you want to block @${user.username}? You will no longer see their profile or messages.`)) {
-      try {
-        await api.blockUser(user.id);
-        window.location.reload();
-      } catch (err) {
-        console.error('Failed to block user', err);
-      }
-    }
   };
 
   return (
@@ -118,11 +105,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                 <button onClick={handleShare} className="luxury-button-outline flex items-center gap-2">
                   <Share2 className="w-4 h-4" /> Share Profile
                 </button>
-                {isLoggedIn && !isOwnProfile && (
-                  <button onClick={handleBlock} className="luxury-button-outline text-red-500 hover:bg-red-500/10 border-red-500/20 flex items-center gap-2">
-                    <Ban className="w-4 h-4" /> Block
-                  </button>
-                )}
               </div>
             </div>
           </div>

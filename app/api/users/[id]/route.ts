@@ -1,18 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getUserById, updateUser, isBlocked } from '@/lib/db';
+import { getUserById, updateUser } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-
-    // Check if target user has blocked the current user
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      const blocked = await isBlocked(id, currentUser.id);
-      if (blocked) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const user = await getUserById(id);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     return NextResponse.json(user);
@@ -31,7 +23,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const body = await request.json();
     // Only allow safe fields to be updated
-    const allowedFields = ['displayName', 'email', 'bio', 'avatar', 'website', 'settings', 'gender', 'dob', 'country', 'publicKey'];
+    const allowedFields = ['displayName', 'email', 'bio', 'avatar', 'website', 'settings', 'gender', 'dob', 'country'];
     const safeUpdates: Record<string, any> = {};
     for (const key of allowedFields) {
       if (body[key] !== undefined) safeUpdates[key] = body[key];
