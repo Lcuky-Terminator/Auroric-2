@@ -19,3 +19,4 @@ export const NOTIFICATIONS_COL = 'notifications';
 export const MESSAGES_COL = 'messages';
 export const CONVERSATIONS_COL = 'conversations';
 export const DELETION_REQUESTS_COL = 'deletion_requests';
+export const BLOCKED_USERS_COL = 'blocked_users';

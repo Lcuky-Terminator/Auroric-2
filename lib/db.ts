@@ -1,6 +1,6 @@
 import { ID, Query } from 'node-appwrite';
-import { databases, DB_ID, USERS_COL, PINS_COL, BOARDS_COL, NOTIFICATIONS_COL, MESSAGES_COL, CONVERSATIONS_COL, DELETION_REQUESTS_COL } from './appwrite';
-import type { User, Pin, Board, Comment, Notification, UserSettings, PaginatedResult, Conversation, Message, DeletionRequest } from './types';
+import { databases, DB_ID, USERS_COL, PINS_COL, BOARDS_COL, NOTIFICATIONS_COL, MESSAGES_COL, CONVERSATIONS_COL, DELETION_REQUESTS_COL, BLOCKED_USERS_COL } from './appwrite';
+import type { User, Pin, Board, Comment, Notification, UserSettings, PaginatedResult, Conversation, Message, DeletionRequest, BlockedUser } from './types';
 import { CHAT_STORAGE_LIMIT_STANDARD, CHAT_STORAGE_LIMIT_VERIFIED } from './types';
 
 // ── Types ──
@@ -35,6 +35,7 @@ function docToUser(doc: any): ServerUser {
     gender: doc.gender || undefined,
     dob: doc.dob || undefined,
     country: doc.country || undefined,
+    publicKey: doc.publicKey || undefined,
     // Security
     passwordChangeCount: doc.passwordChangeCount ?? 0,
     passwordChangeLockUntil: doc.passwordChangeLockUntil || undefined,
@@ -73,6 +74,7 @@ function userToDoc(u: ServerUser): Record<string, any> {
     gender: u.gender || '',
     dob: u.dob || '',
     country: u.country || '',
+    publicKey: u.publicKey || '',
     // Security
     passwordChangeCount: u.passwordChangeCount ?? 0,
     passwordChangeLockUntil: u.passwordChangeLockUntil || '',
@@ -959,4 +961,59 @@ export async function getDeletionRequest(userId: string): Promise<DeletionReques
     Query.limit(1),
   ]);
   return documents.length ? docToDeletionRequest(documents[0]) : null;
+}
+
+// ==================== BLOCKED USERS ====================
+
+function docToBlockedUser(doc: any): BlockedUser {
+  return {
+    id: doc.$id,
+    blockerId: doc.blockerId,
+    blockedId: doc.blockedId,
+    createdAt: doc.createdAt,
+  };
+}
+
+export async function blockUser(blockerId: string, blockedId: string): Promise<BlockedUser> {
+  // Check if already blocked
+  const existing = await isBlocked(blockerId, blockedId);
+  if (existing) return existing;
+
+  const doc = await databases.createDocument(DB_ID, BLOCKED_USERS_COL, ID.unique(), {
+    blockerId,
+    blockedId,
+    createdAt: new Date().toISOString(),
+  });
+  return docToBlockedUser(doc);
+}
+
+export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
+  const { documents } = await databases.listDocuments(DB_ID, BLOCKED_USERS_COL, [
+    Query.equal('blockerId', blockerId),
+    Query.equal('blockedId', blockedId),
+    Query.limit(1),
+  ]);
+
+  if (documents.length > 0) {
+    await databases.deleteDocument(DB_ID, BLOCKED_USERS_COL, documents[0].$id);
+  }
+}
+
+export async function isBlocked(blockerId: string, blockedId: string): Promise<BlockedUser | null> {
+  const { documents } = await databases.listDocuments(DB_ID, BLOCKED_USERS_COL, [
+    Query.equal('blockerId', blockerId),
+    Query.equal('blockedId', blockedId),
+    Query.limit(1),
+  ]);
+
+  return documents.length > 0 ? docToBlockedUser(documents[0]) : null;
+}
+
+export async function getBlockedUsers(blockerId: string): Promise<BlockedUser[]> {
+  const { documents } = await databases.listDocuments(DB_ID, BLOCKED_USERS_COL, [
+    Query.equal('blockerId', blockerId),
+    Query.limit(100),
+  ]);
+
+  return documents.map(docToBlockedUser);
 }
