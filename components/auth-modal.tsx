@@ -161,7 +161,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card border border-border/50 rounded-2xl p-8 w-full max-w-md mx-4 animate-slideUp relative" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border/50 rounded-2xl p-8 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto animate-slideUp relative" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 text-foreground/60 hover:text-foreground smooth-transition">
           <X className="w-5 h-5" />
         </button>
