@@ -1,4 +1,4 @@
-import { Client, Databases, Storage } from 'node-appwrite';
+import { Client, Databases, Storage, Users } from 'node-appwrite';
 
 const client = new Client()
   .setEndpoint(process.env.APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1')
@@ -7,6 +7,7 @@ const client = new Client()
 
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const users = new Users(client);
 
 export const DB_ID = process.env.APPWRITE_DATABASE_ID || 'auroric-db';
 export const BUCKET_ID = process.env.APPWRITE_BUCKET_ID || 'auroric-images';

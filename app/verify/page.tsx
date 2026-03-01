@@ -32,7 +32,8 @@ export default function VerifyPage() {
       try {
         await account.updateVerification(userId!, secret!);
 
-        // Also update our DB to mark email as verified
+        // Update our DB to mark email as verified
+        // Send the userId so the server can find the user even without a JWT session
         try {
           await fetch('/api/auth/verify', {
             method: 'POST',

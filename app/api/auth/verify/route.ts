@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateUser, getUserFull } from '@/lib/db';
+import { updateUser, getUserFull, getUserByEmail } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 /**
@@ -7,15 +7,29 @@ import { getCurrentUser } from '@/lib/auth';
  *
  * Called by the /verify page after Appwrite's updateVerification succeeds.
  * Updates the emailVerified flag in our Appwrite Database collection.
+ *
+ * Supports two modes:
+ *  1. JWT-authenticated: gets user from cookie (same device)
+ *  2. userId + email fallback: when the verifying device may not have a JWT
+ *     session (e.g. user clicked the link on their phone)
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // If called from the verify page with appwriteVerified flag
     if (body.appwriteVerified) {
-      // Try to get the current user from JWT cookie
-      const user = await getCurrentUser();
+      // Try JWT cookie first (same device)
+      let user = await getCurrentUser();
+
+      // Fallback: use email from the request body to find the user
+      if (!user && body.email) {
+        try {
+          user = await getUserByEmail(body.email);
+        } catch {
+          // Ignore
+        }
+      }
+
       if (user) {
         await updateUser(user.id, { emailVerified: true } as any);
         return NextResponse.json({ verified: true, message: 'Email verified in database' });

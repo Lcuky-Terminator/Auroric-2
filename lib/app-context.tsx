@@ -184,9 +184,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Auto-refresh data every 30 seconds to keep in sync with server
   useEffect(() => {
     if (!ready) return;
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       loadData();
-      if (currentUser) loadNotifications();
+      if (currentUser) {
+        loadNotifications();
+        // Re-fetch current user to detect email verification changes (cross-device)
+        try {
+          const meResult = await api.me();
+          if (meResult.user) {
+            setCurrentUser(prev => {
+              // Only update if something changed to avoid unnecessary re-renders
+              if (prev && prev.emailVerified !== meResult.user.emailVerified) {
+                return meResult.user;
+              }
+              return prev;
+            });
+          }
+        } catch {
+          // Ignore — user may have logged out
+        }
+      }
     }, 30_000);
     return () => clearInterval(interval);
   }, [ready, currentUser, loadData, loadNotifications]);
