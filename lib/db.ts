@@ -53,30 +53,20 @@ function docToUser(doc: any): ServerUser {
 
 function userToDoc(u: ServerUser): Record<string, any> {
   const s = u.settings || {} as any;
+  // IMPORTANT: Only include attributes that exist in the Appwrite collection schema.
+  // See scripts/setup-appwrite.ts for the definitive list of attributes.
   return {
     username: u.username,
     displayName: u.displayName,
     email: u.email,
-    bio: u.bio,
-    avatar: u.avatar,
-    website: u.website,
+    bio: u.bio || '',
+    avatar: u.avatar || '',
+    website: u.website || '',
     passwordHash: u.passwordHash,
     followersJson: JSON.stringify(u.followers),
     followingJson: JSON.stringify(u.following),
     createdAt: u.createdAt,
     emailVerified: u.emailVerified ?? false,
-    // Verification
-    isVerified: u.isVerified ?? false,
-    verificationType: u.verificationType || 'none',
-    isPromoted: u.isPromoted ?? false,
-    // Expanded Profile
-    gender: u.gender || '',
-    dob: u.dob || '',
-    country: u.country || '',
-    // Security
-    passwordChangeCount: u.passwordChangeCount ?? 0,
-    passwordChangeLockUntil: u.passwordChangeLockUntil || '',
-    accountStatus: u.accountStatus || 'active',
     settingsPrivateProfile: s.privateProfile ?? false,
     settingsShowActivity: s.showActivity ?? true,
     settingsAllowMessages: s.allowMessages ?? true,
