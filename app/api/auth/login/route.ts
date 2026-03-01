@@ -4,17 +4,19 @@ import { verifyPassword, createToken, COOKIE_NAME, COOKIE_OPTIONS } from '@/lib/
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
+    const body = await request.json();
+    const username = (body.username || '').trim().toLowerCase();
+    const password = body.password || '';
 
     if (!username || !password) {
       return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
     }
 
-    // Find user by username or email
+    // Find user by username or email (case-insensitive since we lowercase the input)
     let user = await getUserByUsername(username);
     if (!user) user = await getUserByEmail(username);
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 401 });
+      return NextResponse.json({ error: 'No account found with that username or email' }, { status: 401 });
     }
 
     if (!user.passwordHash) {

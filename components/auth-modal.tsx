@@ -108,10 +108,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
     try {
       if (mode === 'login') {
-        const success = await login(formData.username, formData.password);
+        const normalizedUsername = formData.username.trim().toLowerCase();
+        const success = await login(normalizedUsername, formData.password);
         if (success) {
           onClose();
           setFormData({ username: '', displayName: '', email: '', password: '', confirmPassword: '' });
+        } else {
+          setError('Login failed. Please check your credentials and try again.');
         }
       } else {
         if (!formData.username || !formData.displayName || !formData.email || !formData.password) {
@@ -147,8 +150,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           setFormData({ username: '', displayName: '', email: '', password: '', confirmPassword: '' });
           // Redirect to verify-email page after signup
           router.push('/verify-email');
-        } else {
-          setError('Username or email already exists');
         }
       }
     } catch (err: any) {
