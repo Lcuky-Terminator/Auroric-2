@@ -70,7 +70,13 @@ export default function VerifyEmailPage() {
 
       const data = await res.json();
 
-      if (res.ok && data.sent) {
+      if (res.ok && data.alreadyVerified) {
+        // Server confirmed email is verified — redirect
+        setVerified(true);
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else if (res.ok && data.sent) {
         setResent(true);
       } else if (res.status === 409) {
         // Already verified — redirect
