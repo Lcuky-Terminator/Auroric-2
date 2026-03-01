@@ -48,7 +48,18 @@ export async function POST(request: Request) {
 
         const verifyUrl = `${origin}/verify?token=${verificationToken}`;
 
-        // Send the email via Resend
+        // ── Dev mode: skip Resend, log the link to terminal ──
+        if (process.env.NODE_ENV === 'development') {
+            console.log('\n' + '='.repeat(60));
+            console.log('📧 DEV MODE — VERIFICATION EMAIL BYPASSED');
+            console.log(`   User: ${full.displayName} (${full.email})`);
+            console.log(`   TEST VERIFICATION LINK:`);
+            console.log(`   ${verifyUrl}`);
+            console.log('='.repeat(60) + '\n');
+            return NextResponse.json({ sent: true, message: 'Verification link logged to console (dev mode)' });
+        }
+
+        // ── Production: send the email via Resend ──
         await sendVerificationEmail(full.email, full.displayName, verifyUrl);
 
         return NextResponse.json({ sent: true, message: 'Verification email sent!' });

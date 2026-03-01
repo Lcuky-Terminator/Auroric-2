@@ -9,6 +9,59 @@ import { X, Check, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 /** Only lowercase letters, numbers, and underscores. 3-20 chars. */
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 
+/** Common typo corrections for email domains */
+const TYPO_CORRECTIONS: Record<string, string> = {
+  'gmial.com': 'gmail.com',
+  'gmal.com': 'gmail.com',
+  'gmai.com': 'gmail.com',
+  'gamil.com': 'gmail.com',
+  'gmail.cpm': 'gmail.com',
+  'gmail.con': 'gmail.com',
+  'gmail.co': 'gmail.com',
+  'gmail.om': 'gmail.com',
+  'gmail.cm': 'gmail.com',
+  'gmaill.com': 'gmail.com',
+  'gnail.com': 'gmail.com',
+  'yahooo.com': 'yahoo.com',
+  'yaho.com': 'yahoo.com',
+  'yahoo.cpm': 'yahoo.com',
+  'yahoo.con': 'yahoo.com',
+  'hotmal.com': 'hotmail.com',
+  'hotmail.cpm': 'hotmail.com',
+  'hotmail.con': 'hotmail.com',
+  'outlok.com': 'outlook.com',
+  'outloo.com': 'outlook.com',
+  'outlook.cpm': 'outlook.com',
+  'outlook.con': 'outlook.com',
+};
+
+/** Validate email format and catch common typos. Returns error string or null. */
+function validateEmailDomain(email: string): string | null {
+  if (!email) return 'Email is required';
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return 'Please enter a valid email address';
+
+  // Check for obvious TLD typos
+  const tld = domain.split('.').pop() || '';
+  const invalidTLDs = ['cpm', 'con', 'cm', 'om', 'cim', 'vom', 'xom', 'ocm'];
+  if (invalidTLDs.includes(tld)) {
+    const suggestion = TYPO_CORRECTIONS[domain];
+    if (suggestion) return `Did you mean @${suggestion}?`;
+    return `"${tld}" is not a valid email domain ending. Did you mean .com?`;
+  }
+
+  // Check for known domain typos
+  if (TYPO_CORRECTIONS[domain]) {
+    return `Did you mean @${TYPO_CORRECTIONS[domain]}?`;
+  }
+
+  return null; // valid
+}
+
 function sanitizeUsername(raw: string) {
   return raw.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
 }
@@ -119,6 +172,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       } else {
         if (!formData.username || !formData.displayName || !formData.email || !formData.password) {
           setError('Please fill in all fields');
+          setLoading(false);
+          return;
+        }
+        // Validate email domain and catch typos
+        const emailError = validateEmailDomain(formData.email);
+        if (emailError) {
+          setError(emailError);
           setLoading(false);
           return;
         }
