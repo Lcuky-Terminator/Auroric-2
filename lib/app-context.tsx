@@ -5,7 +5,7 @@ import { getSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { User, Pin, Board, Notification } from './types';
 import { api } from './api-client';
-import { registerUser } from './email-verification';
+import { account } from './appwrite-client';
 
 interface AppContextType {
   // Auth
@@ -210,14 +210,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const signup = useCallback(async (username: string, displayName: string, email: string, password: string): Promise<boolean> => {
     try {
-      const { user, verificationSent } = await registerUser(email, password, displayName, username);
-      setCurrentUser(user);
+      // Step 1: Create user in Appwrite Auth + DB via our API
+      const result = await api.signup(username, displayName, email, password);
+      setCurrentUser(result.user);
       await loadData();
-      // If verification email was sent, the RequireAuth component will
-      // redirect unverified users to /verify-email automatically.
+
+      // Step 2: Create Appwrite session (so client SDK can call createVerification)
+      try {
+        await account.createEmailPasswordSession(email, password);
+      } catch (sessionErr: any) {
+        console.warn('[Signup] Appwrite session creation failed (non-critical):', sessionErr?.message);
+      }
+
+      // Step 3: Trigger Appwrite's built-in verification email
+      try {
+        const verifyUrl = `${window.location.origin}/verify`;
+        await account.createVerification(verifyUrl);
+        console.log('[Signup] Verification email triggered via Appwrite');
+      } catch (verifyErr: any) {
+        console.warn('[Signup] Verification email trigger failed (non-critical):', verifyErr?.message);
+      }
+
       return true;
     } catch (err) {
-      // Re-throw so the UI can display the specific error message
       throw err;
     }
   }, [loadData]);

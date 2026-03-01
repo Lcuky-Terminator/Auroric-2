@@ -1,105 +1,105 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-import { useApp } from '@/lib/app-context';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { account } from '@/lib/appwrite-client';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 
 /**
- * /verify — Email verification callback page.
+ * /verify — Appwrite email verification callback page.
  *
- * The verification email contains a link like:
- *   /verify?token=<jwt-token>
- *
- * This page sends the token to POST /api/auth/verify to flip
- * the emailVerified flag in the database.
+ * When a user clicks the verification link in their email, Appwrite redirects
+ * them here with `userId` and `secret` query parameters. This page calls
+ * `account.updateVerification()` to complete the verification.
  */
 export default function VerifyPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { refresh } = useApp();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const userId = searchParams.get('userId');
+    const secret = searchParams.get('secret');
 
-    if (!token) {
+    if (!userId || !secret) {
       setStatus('error');
-      setErrorMessage('Invalid verification link — missing token.');
+      setErrorMessage('Invalid verification link. Missing userId or secret.');
       return;
     }
 
-    fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok && data.verified) {
-          setStatus('success');
-          refresh(); // reload user data so emailVerified updates
-          setTimeout(() => router.push('/'), 3000);
-        } else {
-          setStatus('error');
-          setErrorMessage(data.error || 'Verification failed.');
+    async function verify() {
+      try {
+        await account.updateVerification(userId!, secret!);
+
+        // Also update our DB to mark email as verified
+        try {
+          await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, appwriteVerified: true }),
+          });
+        } catch {
+          // Non-critical — the DB flag is secondary to Appwrite's verification
         }
-      })
-      .catch((err) => {
+
+        setStatus('success');
+        // Redirect to home after a short delay
+        setTimeout(() => router.push('/'), 3000);
+      } catch (err: any) {
+        console.error('[Verify] Appwrite updateVerification failed:', err);
         setStatus('error');
-        setErrorMessage(err?.message || 'Verification failed. Please try again.');
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        if (err?.code === 401) {
+          setErrorMessage('Verification link has expired or is invalid. Please request a new one.');
+        } else {
+          setErrorMessage(err?.message || 'Verification failed. Please try again.');
+        }
+      }
+    }
+
+    verify();
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-card border border-border/50 rounded-2xl p-8 text-center">
-        {status === 'loading' && (
+        {status === 'verifying' && (
           <>
-            <Loader2 className="w-12 h-12 text-accent animate-spin mx-auto mb-4" />
-            <h1 className="text-xl font-bold mb-2">Verifying your email…</h1>
-            <p className="text-foreground/60">Please wait while we confirm your address.</p>
+            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-6">
+              <Loader2 className="w-8 h-8 text-accent animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Verifying your email...</h1>
+            <p className="text-foreground/60">Please wait while we verify your email address.</p>
           </>
         )}
 
         {status === 'success' && (
           <>
-            <CheckCircle className="w-14 h-14 text-green-400 mx-auto mb-4" />
+            <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+            </div>
             <h1 className="text-2xl font-bold mb-2">Email Verified!</h1>
-            <p className="text-foreground/60 mb-6">
-              Your account is now fully activated. Redirecting you to the home page…
+            <p className="text-foreground/60 mb-4">
+              Your email has been verified successfully. You now have full access to Auroric.
             </p>
-            <Link
-              href="/"
-              className="luxury-button inline-flex items-center gap-2 px-6 py-2.5"
-            >
-              Go to Home
-            </Link>
+            <p className="text-foreground/40 text-sm">Redirecting to home page...</p>
           </>
         )}
 
         {status === 'error' && (
           <>
-            <XCircle className="w-14 h-14 text-destructive mx-auto mb-4" />
+            <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-8 h-8 text-destructive" />
+            </div>
             <h1 className="text-2xl font-bold mb-2">Verification Failed</h1>
-            <p className="text-foreground/60 mb-6">{errorMessage}</p>
+            <p className="text-foreground/60 mb-4">{errorMessage}</p>
             <div className="flex flex-col gap-3">
-              <Link
-                href="/verify-email"
-                className="luxury-button inline-flex items-center justify-center gap-2 px-6 py-2.5"
-              >
-                Request a new link
-              </Link>
-              <Link
-                href="/"
-                className="text-foreground/60 hover:text-foreground smooth-transition text-sm"
-              >
-                Back to home
-              </Link>
+              <a href="/verify-email" className="luxury-button w-full py-3 inline-block text-center">
+                Request New Verification Email
+              </a>
+              <a href="/" className="text-accent/80 hover:text-accent smooth-transition text-sm">
+                Go to Home
+              </a>
             </div>
           </>
         )}

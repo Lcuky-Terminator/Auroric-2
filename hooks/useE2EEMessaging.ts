@@ -6,7 +6,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { useApp } from '@/lib/app-context';
-import { supabase } from '@/lib/appwrite-client';
+import { supabase } from '@/lib/supabase-client';
 import {
   initializeUserEncryption,
   getStoredPrivateKey,

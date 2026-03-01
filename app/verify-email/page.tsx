@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/lib/app-context';
+import { account } from '@/lib/appwrite-client';
 import { Mail, RefreshCw } from 'lucide-react';
 
 /**
  * /verify-email — "Check your inbox" page.
  *
  * Shown to users who are logged in but have not yet verified their email.
- * They can request a new verification email from here (sent via Resend).
+ * Uses Appwrite's built-in verification email (no Resend needed).
  */
 export default function VerifyEmailPage() {
   const { currentUser, logout } = useApp();
@@ -21,15 +22,18 @@ export default function VerifyEmailPage() {
     setError('');
     setResent(false);
     try {
-      const res = await fetch('/api/auth/send-verification', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        setResent(true);
-      } else {
-        setError(data.error || 'Failed to send verification email.');
-      }
+      // Use Appwrite client SDK to trigger verification email
+      const verifyUrl = `${window.location.origin}/verify`;
+      await account.createVerification(verifyUrl);
+      setResent(true);
     } catch (err: any) {
-      setError(err?.message || 'Failed to resend verification email. Please try again.');
+      console.error('[VerifyEmail] Resend failed:', err);
+      // If there's no active Appwrite session, try to create one
+      if (err?.code === 401) {
+        setError('Session expired. Please log out and sign in again to resend.');
+      } else {
+        setError(err?.message || 'Failed to resend verification email. Please try again.');
+      }
     } finally {
       setResending(false);
     }

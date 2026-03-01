@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { supabase } from '@/lib/appwrite-client';
+import { supabase } from '@/lib/supabase-client';
 
 /**
  * GET /api/auth/initialize-encryption

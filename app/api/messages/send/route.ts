@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { supabase } from '@/lib/appwrite-client';
+import { supabase } from '@/lib/supabase-client';
 
 /**
  * Validate ciphertext format (basic validation)

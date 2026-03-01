@@ -9,13 +9,12 @@
  * API routes / server components only.
  */
 
-import { Client, Account } from 'appwrite';
-import { createClient } from '@supabase/supabase-js';
+import { Client, Account, ID } from 'appwrite';
 
 const client = new Client()
   .setEndpoint(
     process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
-      'https://nyc.cloud.appwrite.io/v1',
+    'https://nyc.cloud.appwrite.io/v1',
   )
   .setProject(
     process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '',
@@ -24,23 +23,7 @@ const client = new Client()
 /** Browser-side Appwrite Account service */
 export const account = new Account(client);
 
-/** Supabase client for E2EE messaging - only initialize if credentials are available */
-export const supabase = 
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      )
-    : // Placeholder for build time - will be replaced at runtime
-      ({
-        from: () => ({
-          select: () => ({ eq: () => Promise.reject(new Error('Supabase not configured')) }),
-          insert: () => Promise.reject(new Error('Supabase not configured')),
-          update: () => ({ eq: () => Promise.reject(new Error('Supabase not configured')) }),
-          delete: () => Promise.reject(new Error('Supabase not configured')),
-        }),
-        channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }) }),
-        removeChannel: () => {},
-      } as any);
+/** Re-export ID for convenience */
+export { ID };
 
 export default client;

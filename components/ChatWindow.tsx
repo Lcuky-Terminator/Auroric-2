@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/lib/appwrite-client';
+import { supabase } from '@/lib/supabase-client';
 import {
   encryptMessage,
   decryptMessage,
@@ -358,11 +358,11 @@ export default function ChatWindow({ recipientId, recipientUsername, onClose }: 
         prev.map((msg) =>
           msg.id === optimisticMessage.id
             ? {
-                ...msg,
-                id: insertedMessage.id,
-                created_at: insertedMessage.created_at,
-                isEncrypting: false,
-              }
+              ...msg,
+              id: insertedMessage.id,
+              created_at: insertedMessage.created_at,
+              isEncrypting: false,
+            }
             : msg
         )
       );
@@ -616,17 +616,15 @@ export default function ChatWindow({ recipientId, recipientUsername, onClose }: 
               className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xs px-4 py-2 rounded-lg ${
-                  msg.sender_id === userId
+                className={`max-w-xs px-4 py-2 rounded-lg ${msg.sender_id === userId
                     ? 'bg-blue-500 text-white rounded-br-none'
                     : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'
-                }`}
+                  }`}
               >
                 <p className="break-words text-sm">{msg.decrypted_text || msg.ciphertext}</p>
                 <p
-                  className={`text-xs mt-1 ${
-                    msg.sender_id === userId ? 'text-blue-100' : 'text-gray-500'
-                  }`}
+                  className={`text-xs mt-1 ${msg.sender_id === userId ? 'text-blue-100' : 'text-gray-500'
+                    }`}
                 >
                   {new Date(msg.created_at).toLocaleTimeString([], {
                     hour: '2-digit',
